@@ -16,8 +16,10 @@ BUCKET = os.environ.get("GCP_GCS_BUCKET")
 # Define url for loading data and working directory
 AIRFLOW_HOME = os.environ.get("AIRFLOW_HOME", "/opt/airflow/")
 ZONE_URL = "https://d37ci6vzurychx.cloudfront.net/misc/taxi_zone_lookup.csv"
-ZONE_OUTPUT_FILE_TEMPLATE = AIRFLOW_HOME + "taxi_zone.csv"
+ZONE_OUTPUT_FILE_TEMPLATE = AIRFLOW_HOME + "/taxi_zone_lookup.csv"
 ZONE_PARQUET = ZONE_OUTPUT_FILE_TEMPLATE.replace('.csv', '.parquet')
+
+GCS_ZONE_TEMPLATE = "zone/taxi_zone.parquet"
 
 # Default arguments for the DAG
 args = {
@@ -26,21 +28,17 @@ args = {
     'retries': 1,
 }
 
-# Define the DAG
+# Define your DAG
 dag = DAG(
-    dag_id="nyc_taxi_data_ingestion",
-    default_args=args,
-    description="Downloading and processing NYC taxi data",
-    schedule_interval="0 6 2 * *",  # Run on the 2nd of every month at 6:00 AM
-    start_date=datetime(2024, 1, 1),
-    catchup=True,
-    max_active_runs=3
+    dag_id='zone_data_load',
+    start_date=datetime(2024, 10, 21),
+    schedule_interval=None, 
 )
 
 # Tasks
     
 download_zone_task = BashOperator(
-    task_id="download_taxi_data_parquet",
+    task_id="download_zone_data_parquet",
     bash_command=f"curl -sSL {ZONE_URL} > {ZONE_OUTPUT_FILE_TEMPLATE}",
     dag = dag
 )
@@ -59,8 +57,8 @@ local_to_gcs_task = PythonOperator(
     python_callable=upload_to_gcs,
     op_kwargs={
         "bucket": BUCKET,
-        "object_name": f"zone/{ZONE_PARQUET}",
-        "local_file": ZONE_OUTPUT_FILE_TEMPLATE
+        "object_name": GCS_ZONE_TEMPLATE,
+        "local_file": ZONE_PARQUET
     },
     dag=dag
 )

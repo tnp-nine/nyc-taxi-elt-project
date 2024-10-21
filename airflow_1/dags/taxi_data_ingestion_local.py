@@ -44,7 +44,7 @@ dag = DAG(
     
 download_taxi_parquet_task = BashOperator(
     task_id="download_taxi_data_parquet",
-    bash_command=f"curl -sSL {URL_TEMPLATE} > {OUTPUT_FILE_TEMPLATE}",
+    bash_command=f"curl -sSL {URL_TEMPLATE} -o {OUTPUT_FILE_TEMPLATE}",
     dag = dag
 )
 
