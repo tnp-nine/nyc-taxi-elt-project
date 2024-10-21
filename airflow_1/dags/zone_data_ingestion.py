@@ -7,6 +7,7 @@ from airflow.operators.python import PythonOperator
 # from airflow.providers.google.cloud.operators.bigquery import BigQueryCreateExternalTableOperator
 
 # from scripts.ingestion_script import ingestion_data
+from scripts.csv_to_parquet import format_to_parquet
 from scripts.gcs_script import upload_to_gcs
 
 PROJECT_ID = os.environ.get("GCP_PROJECT_ID")
@@ -14,12 +15,9 @@ BUCKET = os.environ.get("GCP_GCS_BUCKET")
 
 # Define url for loading data and working directory
 AIRFLOW_HOME = os.environ.get("AIRFLOW_HOME", "/opt/airflow/")
-URL_PREFIX = "https://d37ci6vzurychx.cloudfront.net/trip-data"
-
-URL_TEMPLATE = URL_PREFIX + "/yellow_tripdata_{{ execution_date.strftime(\'%Y-%m\') }}.parquet"
-OUTPUT_FILE_TEMPLATE = AIRFLOW_HOME + "/output_{{ execution_date.strftime(\'%Y-%m\') }}.parquet"
-TABLE_NAME_TEMPLATE = "yellow_taxi_{{ execution_date.strftime('%Y-%m') }}"
-GCS_OBJECT_TEMPLATE = "raw/yellow_taxi_{{ execution_date.strftime(\'%Y-%m\') }}.parquet"
+ZONE_URL = "https://d37ci6vzurychx.cloudfront.net/misc/taxi_zone_lookup.csv"
+ZONE_OUTPUT_FILE_TEMPLATE = AIRFLOW_HOME + "taxi_zone.csv"
+ZONE_PARQUET = ZONE_OUTPUT_FILE_TEMPLATE.replace('.csv', '.parquet')
 
 # Default arguments for the DAG
 args = {
@@ -39,39 +37,37 @@ dag = DAG(
     max_active_runs=3
 )
 
-
 # Tasks
     
-download_parquet_task = BashOperator(
-    task_id="download_parquet",
-    bash_command=f"curl -sSL {URL_TEMPLATE} > {OUTPUT_FILE_TEMPLATE}",
+download_zone_task = BashOperator(
+    task_id="download_taxi_data_parquet",
+    bash_command=f"curl -sSL {ZONE_URL} > {ZONE_OUTPUT_FILE_TEMPLATE}",
     dag = dag
 )
 
-# ingestion_task = PythonOperator(
-#     task_id="ingesting_nyc_yellow_taxi_data",
-#     python_callable=ingestion_data,
-#     op_kwargs=dict(
-#         table_name=TABLE_NAME_TEMPLATE,
-#         parquet_file=OUTPUT_FILE_TEMPLATE
-#     ),
-#     dag = dag
-# )
+format_to_parquet_task = PythonOperator(
+    task_id="format_to_parquet",
+    python_callable=format_to_parquet,
+    op_kwargs={
+        "src_file": ZONE_OUTPUT_FILE_TEMPLATE
+    },
+    dag=dag
+)
 
 local_to_gcs_task = PythonOperator(
-    task_id="local_to_gcs_task",
+    task_id="zone_data_form_local_to_gcs",
     python_callable=upload_to_gcs,
-    op_kwargs=dict(
-        bucket=BUCKET,
-        object_name=GCS_OBJECT_TEMPLATE,
-        local_file=OUTPUT_FILE_TEMPLATE
-    ),
-    dag = dag
+    op_kwargs={
+        "bucket": BUCKET,
+        "object_name": f"zone/{ZONE_PARQUET}",
+        "local_file": ZONE_OUTPUT_FILE_TEMPLATE
+    },
+    dag=dag
 )
 
 remove_files_task = BashOperator(
     task_id="remove_file_task",
-    bash_command=f"rm {OUTPUT_FILE_TEMPLATE}"
+    bash_command=f"rm {ZONE_OUTPUT_FILE_TEMPLATE}"
 )
 
-download_parquet_task >> local_to_gcs_task >> remove_files_task
+download_zone_task >> format_to_parquet_task >> local_to_gcs_task >> remove_files_task
