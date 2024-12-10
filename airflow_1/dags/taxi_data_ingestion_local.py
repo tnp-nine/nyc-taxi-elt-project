@@ -19,7 +19,7 @@ URL_PREFIX = "https://d37ci6vzurychx.cloudfront.net/trip-data"
 URL_TEMPLATE = URL_PREFIX + "/yellow_tripdata_{{ execution_date.strftime(\'%Y-%m\') }}.parquet"
 OUTPUT_FILE_TEMPLATE = AIRFLOW_HOME + "/output_{{ execution_date.strftime(\'%Y-%m\') }}.parquet"
 TABLE_NAME_TEMPLATE = "yellow_taxi_{{ execution_date.strftime('%Y-%m') }}"
-GCS_OBJECT_TEMPLATE = "raw/yellow_taxi_{{ execution_date.strftime(\'%Y-%m\') }}.parquet"
+GCS_OBJECT_TEMPLATE = "trip_data/yellow_taxi_{{ execution_date.strftime(\'%Y-%m\') }}.parquet"
 
 # Default arguments for the DAG
 args = {

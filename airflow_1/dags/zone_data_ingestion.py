@@ -19,7 +19,7 @@ ZONE_URL = "https://d37ci6vzurychx.cloudfront.net/misc/taxi_zone_lookup.csv"
 ZONE_OUTPUT_FILE_TEMPLATE = AIRFLOW_HOME + "/taxi_zone_lookup.csv"
 ZONE_PARQUET = ZONE_OUTPUT_FILE_TEMPLATE.replace('.csv', '.parquet')
 
-GCS_ZONE_TEMPLATE = "zone/taxi_zone.parquet"
+GCS_ZONE_TEMPLATE = "zone_data/taxi_zone.parquet"
 
 # Default arguments for the DAG
 args = {
