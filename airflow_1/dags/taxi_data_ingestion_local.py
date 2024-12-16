@@ -6,7 +6,6 @@ from airflow.operators.bash import BashOperator
 from airflow.operators.python import PythonOperator
 # from airflow.providers.google.cloud.operators.bigquery import BigQueryCreateExternalTableOperator
 
-# from scripts.ingestion_script import ingestion_data
 from scripts.gcs_script import upload_to_gcs
 
 PROJECT_ID = os.environ.get("GCP_PROJECT_ID")
