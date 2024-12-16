@@ -68,6 +68,7 @@ x-airflow-common:
     - ./logs:/opt/airflow/logs
     - ./plugins:/opt/airflow/plugins
     - ~/Desktop/Project/google/credentials/google_credentials.json:/.google/credentials/google_credentials.json
+    - ~/Desktop/Project/kaggle/kaggle.json:/home/airflow/.config/kaggle/kaggle.json
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
